@@ -1,5 +1,5 @@
 {
-    "name": "amaka/covariance",
+    "name": "ofc/covariance",
     "description": "A macro for declaring covariant methods.",
     "license": "BSD",
     "version": "v0.1.0-beta",
@@ -10,6 +10,9 @@
         }
     ],
     "autoload": {
+        "psr-4": {
+            "Ofc\\Covariance\\": "src/"
+        },
         "files": [
             "src/covariant.php"
         ]
