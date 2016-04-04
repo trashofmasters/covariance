@@ -10,10 +10,10 @@ function assignRoom(Skier $first, Skier $second)
 assignRoom(new Boy, new Boy);
 // Makes the two boys room mates.
 
-assignRoom(new RankedBoy, new Boy);
+// assignRoom(new RankedBoy, new Boy);
 
 assignRoom(new Boy, new Girl);
-// PHP Fatal error:  Cannot pass object of instance Boy to covariant method Girl::share.
+// BadMethodCallException:  Cannot pass object of instance Girl to covariant method Boy::share.
 
 class Skier
 {

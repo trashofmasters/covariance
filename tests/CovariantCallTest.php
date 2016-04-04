@@ -19,12 +19,13 @@ class CovariantCallTest extends TestCase
     }
 
     /**
-     * @expectedException RuntimeException
-     * @expectedExceptionMessage No handler found
+     * @expectedException BadMethodCallException
+     * @expectedExceptionMessageRegExp /.+CovariantCallTest to covariant method.+CovariantCallTest::mth/
      */
     public function testOneMethodHandler()
     {
         $call = new CovariantCall('mth');
+        $call->setSubjectType($this);
         $call->execute($this);
     }
 

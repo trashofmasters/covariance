@@ -2,7 +2,7 @@
 
 namespace Ofc\Covariance;
 
-use RuntimeException;
+use BadMethodCallException;
 
 class CovariantCall
 {
@@ -81,12 +81,13 @@ class CovariantCall
 
             $message = sprintf(
                 "Cannot pass object of instance %s to covariant method %s::%s.",
-                $subjectClass,
                 $targetClass,
+                $subjectClass,
                 $covariantMethod
             );
-            trigger_error($message, E_USER_ERROR);
-            exit;
+            throw new BadMethodCallException($message);
+            // trigger_error($message, E_USER_ERROR);
+            // exit;
         }
 
         if ($handler instanceof \Closure) {
