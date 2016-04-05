@@ -2,6 +2,7 @@
 
 namespace Ofc\Covariance;
 
+use Closure;
 use BadMethodCallException;
 
 class CovariantCall
@@ -34,14 +35,6 @@ class CovariantCall
         $this->covariantName = $covariantName;
     }
 
-    /**
-     * @return string
-     */
-    public function getParameterType()
-    {
-        return $this->parameterType;
-    }
-
     public function addHandler($possibleType, $handler)
     {
         $this->dispatchTable[$this->className($possibleType)] = $handler;
@@ -71,16 +64,25 @@ class CovariantCall
     public function execute($parameter, ...$additionalArgs)
     {
         $handler = $this->getHandlerForType($parameter);
+
+        // TODO get rid of this flag.
+        $oneMoreArg = false;
         if (empty($handler)) {
             $handler = $this->findHandlerLineage(
                 $parameter,
                 $this->covariantName,
                 $this->callSubject
             );
+            $oneMoreArg = true;
             array_unshift($additionalArgs, $parameter);
         }
 
         if (empty($handler)) {
+            if ($oneMoreArg) {
+                array_shift($additionalArgs);
+            }
+            // when the conditional branch above
+            // is executed there's a duplicate parameter.
             $handler = $this->covariantBody;
         }
 
@@ -102,13 +104,12 @@ class CovariantCall
             // exit;
         }
 
-        if ($handler instanceof \Closure) {
+        if ($handler instanceof Closure) {
             return $handler->__invoke(
                 $parameter,
                 ...$additionalArgs
             );
         }
-
         return call_user_func_array(
             $handler,
             $additionalArgs

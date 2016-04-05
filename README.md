@@ -6,20 +6,20 @@ Therefore, when a parent class declares a method which type hints to some abstra
 
 The purpose of this library is to work within the boundary of what PHP allows to implement parameter and return type covariance, as well as contravariance.
 
-> ```php 
+> ```php
 > class Animal {}
-> 
-> class Cat extends Animal {} 
-> class Dog extends Animal {} 
-> 
+>
+> class Cat extends Animal {}
+> class Dog extends Animal {}
+>
 > abstract class Vet {
 >   public function help(Animal $a) {}
 > }
-> 
+>
 > class AnyOtherVet extends Vet {
 >   public function help(Animal $a) {}
 > }
-> 
+>
 > class BetterVet extends Vet {
 >   public function help(Cat $a) {}
 > }
@@ -31,7 +31,7 @@ This concept is formally known as **covariance**. A method is covariant only if 
 Covariance enables us to write object-oriented that more closely model real world scenarios, as well as to reduce the boilerplate code required in all applications that do work around this limitation of the language in some alternative way.
 
 
-In example 1, we've seen what a covariant method would look like if PHP supported covariance. 
+In example 1, we've seen what a covariant method would look like if PHP supported covariance.
 
 Unfortunately there's no simple way we can extend the language to support this syntax without an unnecessary compilation step, however, using a few conventions it should become possible to achieve a smiliar result.
 
@@ -42,14 +42,14 @@ With this library it becomes possible to achieve method covariance by declaring 
 > ```php
 > class Vet {
 >   public function help(Animal $animal) {
->     return covariant($this, $animal, function(Animal $animal) {
+>     return covariant($this, function(Animal $animal) {
 >       // Base method behaviour:
 >       // Make $animal healthy again.
 >       echo "Your pet is healthy again." . PHP_EOL;
 >     });
 >   }
 > }
-> 
+>
 > class BetterVet extends Vet {
 >   public function helpCat(Cat $cat) {
 >     // Make $cat healthy again.
@@ -73,4 +73,3 @@ With this library it becomes possible to achieve method covariance by declaring 
 > <small>Example 3. </small>
 
 # TODO Enabling contravariance
-

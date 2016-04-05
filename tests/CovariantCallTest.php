@@ -7,17 +7,6 @@ use PHPUnit_Framework_TestCase as TestCase;
 
 class CovariantCallTest extends TestCase
 {
-    public function testUsesQualifiedParameterTypes()
-    {
-        $call = new CovariantCall('mth');
-
-        $this->assertContains(
-            __NAMESPACE__,
-            get_class($this),
-            "Parameter name relies on get_class() to return a qualified name."
-        );
-    }
-
     /**
      * @expectedException BadMethodCallException
      * @expectedExceptionMessageRegExp /.+CovariantCallTest to covariant method.+CovariantCallTest::mth/
@@ -122,12 +111,16 @@ class CovariantCallTest extends TestCase
         );
     }
 
-    public function testCovariantMethodDefaultBody()
+    public function testCallingBaseCovariantMethod()
     {
-        $call = new CovariantCall('mth');
-        $call->setMethodBody(function () {
+        $call = new CovariantCall(null);
+
+        $call->setMethodBody(function (CovariantCallTest $test) {
+            $this->assertInstanceOf(static::class, $test);
+            $this->assertSame($this, $test);
             return 'called';
         });
+
         $call->setCallSubject($this);
         $this->assertEquals(
             'called',
