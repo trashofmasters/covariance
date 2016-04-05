@@ -29,7 +29,7 @@ class CovariantCallTest extends TestCase
         $call->execute($this);
     }
 
-    public function testClosureOneHandler()
+    public function testOneClosureHandler()
     {
         $testCaseHandler = function (TestCase $test) {
             $this->assertSame($this, $test);
@@ -121,10 +121,17 @@ class CovariantCallTest extends TestCase
             )
         );
     }
+
+    public function testCovariantMethodDefaultBody()
+    {
+        $call = new CovariantCall('mth');
+    }
 }
 
 class Skier {
-    function share(Skier $s) {} // covariant.
+    function share(Skier $s) {
+        // The covariant method.
+    }
 }
 
 class Girl extends Skier {

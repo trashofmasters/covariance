@@ -4,25 +4,21 @@ require 'vendor/autoload.php';
 
 function assignRoom(Skier $first, Skier $second)
 {
-    $first->share($second);
+    $first->share($second, 'helo');
 }
 
 assignRoom(new Boy, new Boy);
-// Makes the two boys room mates.
-
-// assignRoom(new RankedBoy, new Boy);
-
 assignRoom(new Boy, new Girl);
-// BadMethodCallException:  Cannot pass object of instance Girl to covariant method Boy::share.
+// BadMethodCallException: Cannot pass object of instance Girl to covariant method Boy::share.
 
 class Skier
 {
     protected $roommate;
 
-    public function share(Skier $skier)
+    public function share(Skier $skier, $another = null)
     {
         // TODO: set base behavior for this method!
-        return covariant($this, $skier);
+        return covariant($this);
     }
 
     public function roommate(Skier $skier)
@@ -46,18 +42,5 @@ class Girl extends Skier
     {
         $this->roommate = $girl;
         return $this;
-    }
-}
-
-class RankedBoy extends Boy
-{
-    public function shareBoy(Boy $boy)
-    {
-        echo 'ranked + boy' . PHP_EOL;
-    }
-
-    public function shareRankedBoy(RankedBoy $boy)
-    {
-        echo 'ranked + ranked' . PHP_EOL;
     }
 }

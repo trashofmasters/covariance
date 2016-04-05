@@ -7,14 +7,7 @@ use BadMethodCallException;
 class CovariantCall
 {
     /**
-     * Dispatch table
-     *
-     * @type array
-     */
-    private $dispatchTable = [];
-
-    /**
-     * Name of the method being augmenting.
+     * Name of the method being augmented with covariant behaviour.
      *
      * @type string
      */
@@ -28,6 +21,13 @@ class CovariantCall
      * @type string
      */
     private $subjectType;
+
+    /**
+     * Base covariant method's body.
+     *
+     * @type callbable
+     */
+    private $baseMethod;
 
     public function __construct($covariantMethod)
     {

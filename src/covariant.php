@@ -3,9 +3,8 @@
  * Declare a covariant method.
  *
  * @param  object    $subject
- * @param  object    $parameter
  */
-function covariant($subject, $parameter)
+function covariant($subject)
 {
     $e = new BadFunctionCallException(
         "Only class methods can be declared as covariant."
@@ -17,6 +16,9 @@ function covariant($subject, $parameter)
     }
 
     $method = $trace[1]['function'];
+    $arguments = $trace[1]['args'];
+
+    $parameter = $arguments[0];
     return (new Ofc\Covariance\CovariantCall($method))
         ->setSubjectType($subject)
         ->execute($parameter);
