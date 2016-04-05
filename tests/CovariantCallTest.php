@@ -25,7 +25,7 @@ class CovariantCallTest extends TestCase
     public function testOneMethodHandler()
     {
         $call = new CovariantCall('mth');
-        $call->setSubjectType($this);
+        $call->setCallSubject($this);
         $call->execute($this);
     }
 
@@ -125,6 +125,14 @@ class CovariantCallTest extends TestCase
     public function testCovariantMethodDefaultBody()
     {
         $call = new CovariantCall('mth');
+        $call->setMethodBody(function () {
+            return 'called';
+        });
+        $call->setCallSubject($this);
+        $this->assertEquals(
+            'called',
+            $call->execute($this)
+        );
     }
 }
 

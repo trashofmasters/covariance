@@ -11,7 +11,14 @@ class CovariantCall
      *
      * @type string
      */
-    private $covariantMethod;
+    private $covariantName;
+
+    /**
+     * Optional body for the covariant method.
+     *
+     * @type callbable
+     */
+    private $covariantBody;
 
     /**
      * Name of the class on which the covariant method
@@ -20,18 +27,11 @@ class CovariantCall
      *
      * @type string
      */
-    private $subjectType;
+    private $callSubject;
 
-    /**
-     * Base covariant method's body.
-     *
-     * @type callbable
-     */
-    private $baseMethod;
-
-    public function __construct($covariantMethod)
+    public function __construct($covariantName)
     {
-        $this->covariantMethod = $covariantMethod;
+        $this->covariantName = $covariantName;
     }
 
     /**
@@ -56,9 +56,15 @@ class CovariantCall
         }
     }
 
-    public function setSubjectType($possibleType)
+    public function setCallSubject($possibleType)
     {
-        $this->subjectType = $this->className($possibleType);
+        $this->callSubject = $this->className($possibleType);
+        return $this;
+    }
+
+    public function setMethodBody($covariantBody)
+    {
+        $this->covariantBody = $covariantBody;
         return $this;
     }
 
@@ -68,24 +74,30 @@ class CovariantCall
         if (empty($handler)) {
             $handler = $this->findHandlerLineage(
                 $parameter,
-                $this->covariantMethod,
-                $this->subjectType
+                $this->covariantName,
+                $this->callSubject
             );
             array_unshift($additionalArgs, $parameter);
         }
 
         if (empty($handler)) {
+            $handler = $this->covariantBody;
+        }
+
+        if (empty($handler)) {
             $targetClass = $this->className($parameter);
-            $subjectClass = $this->subjectType;
-            $covariantMethod = $this->covariantMethod;
+            $subjectClass = $this->callSubject;
+            $covariantName = $this->covariantName;
 
             $message = sprintf(
                 "Cannot pass object of instance %s to covariant method %s::%s.",
                 $targetClass,
                 $subjectClass,
-                $covariantMethod
+                $covariantName
             );
             throw new BadMethodCallException($message);
+            // NOTE: this isn't too bad, but perhaps only useful
+            // when the program is statically checked.
             // trigger_error($message, E_USER_ERROR);
             // exit;
         }
@@ -105,8 +117,8 @@ class CovariantCall
 
     public function findHandlerLineage(
         $possibleType,
-        $covariantMethod,
-        $subjectType = null
+        $covariantBody,
+        $callSubject = null
     ) {
         $className = $this->className($possibleType);
         $candidates = class_parents($className);
@@ -114,13 +126,13 @@ class CovariantCall
         array_unshift($candidates, $className);
         foreach ($candidates as $candidateName) {
             $methodName = $this->methodName(
-                $covariantMethod,
+                $covariantBody,
                 $candidateName
             );
 
             if (method_exists($candidateName, $methodName)) {
-                if ($subjectType
-                    and $subjectType != $candidateName
+                if ($callSubject
+                    and $callSubject != $candidateName
                 ) {
                     return false;
                 }

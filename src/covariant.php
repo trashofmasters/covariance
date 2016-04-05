@@ -18,8 +18,9 @@ function covariant($subject)
     $method = $trace[1]['function'];
     $arguments = $trace[1]['args'];
 
-    $parameter = $arguments[0];
+    $parameter = array_shift($arguments);
     return (new Ofc\Covariance\CovariantCall($method))
-        ->setSubjectType($subject)
+        ->setCallSubject($subject)
+        // ->setRemainingArgs($arguments)
         ->execute($parameter);
 }

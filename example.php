@@ -8,7 +8,11 @@ function assignRoom(Skier $first, Skier $second)
 }
 
 assignRoom(new Boy, new Boy);
-assignRoom(new Boy, new Girl);
+try {
+    assignRoom(new Boy, new Girl);
+} catch (BadMethodCallException $e) {
+    echo "Failed to assign room: {$e->getMessage()}" . PHP_EOL;
+}
 // BadMethodCallException: Cannot pass object of instance Girl to covariant method Boy::share.
 
 class Skier
