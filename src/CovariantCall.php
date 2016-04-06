@@ -51,7 +51,7 @@ class CovariantCall
 
     public function setCallSubject($possibleType)
     {
-        $this->callSubject = $this->className($possibleType);
+        $this->callSubject = $possibleType;
         return $this;
     }
 
@@ -64,39 +64,37 @@ class CovariantCall
     public function execute($parameter, ...$additionalArgs)
     {
         $handler = $this->getHandlerForType($parameter);
+        $subject = $this->callSubject;
+        $methodName = $this->covariantName;
+        $methodBody = $this->covariantBody;
 
         // TODO get rid of this flag.
-        $oneMoreArg = false;
+        $extraArg = false;
         if (empty($handler)) {
             $handler = $this->findHandlerLineage(
-                $parameter,
-                $this->covariantName,
-                $this->callSubject
+                $subject,
+                $methodName,
+                $parameter
             );
-            $oneMoreArg = true;
+            $extraArg = true;
             array_unshift($additionalArgs, $parameter);
         }
 
-        if (empty($handler)) {
-            if ($oneMoreArg) {
-                array_shift($additionalArgs);
-            }
-            // when the conditional branch above
-            // is executed there's a duplicate parameter.
-            $handler = $this->covariantBody;
+        if ($methodBody and empty($handler)) {
+            $handler = $methodBody;
         }
 
         if (empty($handler)) {
-            $targetClass = $this->className($parameter);
-            $subjectClass = $this->callSubject;
-            $covariantName = $this->covariantName;
+            $targetClassName = $this->className($parameter);
+            $subjectClassName = $this->className($subject);
 
             $message = sprintf(
                 "Cannot pass object of instance %s to covariant method %s::%s.",
-                $targetClass,
-                $subjectClass,
-                $covariantName
+                $targetClassName,
+                $subjectClassName,
+                $methodName
             );
+
             throw new BadMethodCallException($message);
             // NOTE: this isn't too bad, but perhaps only useful
             // when the program is statically checked.
@@ -105,39 +103,32 @@ class CovariantCall
         }
 
         if ($handler instanceof Closure) {
-            return $handler->__invoke(
-                $parameter,
-                ...$additionalArgs
-            );
+            return $handler($parameter, ...$additionalArgs);
         }
+
         return call_user_func_array(
             $handler,
             $additionalArgs
+            // array_slice($additionalArgs, (int) $extraArg)
         );
     }
 
-    public function findHandlerLineage(
-        $possibleType,
-        $covariantBody,
-        $callSubject = null
-    ) {
-        $className = $this->className($possibleType);
-        $candidates = class_parents($className);
+    public function findHandlerLineage($callSubject, $covariantName, $parameter) {
+        $subjectClassName = $this->className($callSubject);
+        $parameterClassName = $this->className($parameter);
 
-        array_unshift($candidates, $className);
-        foreach ($candidates as $candidateName) {
+        $classes = array_values(class_parents($subjectClassName));
+        array_unshift($classes, $subjectClassName);
+
+        foreach ($classes as $className) {
             $methodName = $this->methodName(
-                $covariantBody,
-                $candidateName
+                $covariantName,
+                $parameterClassName
             );
-
-            if (method_exists($candidateName, $methodName)) {
-                if ($callSubject
-                    and $callSubject != $candidateName
-                ) {
-                    return false;
+            if (method_exists($className, $methodName)) {
+                if ($className === $subjectClassName) {
+                    return [$callSubject, $methodName];
                 }
-                return [$possibleType, $methodName];
             }
         }
         return false;
@@ -146,21 +137,17 @@ class CovariantCall
     public function className($possibleType)
     {
         if (is_string($possibleType)) {
-            return $possibleType;
+            return rtrim($possibleType, '\\');
         }
-        return get_class($possibleType);
-
+        return rtrim(get_class($possibleType), '\\');
     }
 
     public function methodName($methodName, $className)
     {
-        $className = trim(
-            substr(
-                $className,
-                strrpos($className, '\\')
-            ),
-            '\\'
+        $className = substr(
+            $className,
+            strrpos($className, '\\')
         );
-        return $methodName . $className;
+        return $methodName . trim($className, '\\');
     }
 }

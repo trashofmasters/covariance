@@ -11,14 +11,28 @@ class CovariantCallTest extends TestCase
      * @expectedException BadMethodCallException
      * @expectedExceptionMessageRegExp /.+CovariantCallTest to covariant method.+CovariantCallTest::mth/
      */
-    public function testOneMethodHandler()
+    public function testCallToUndefinedMethodWithNoHandlerThrows()
     {
         $call = new CovariantCall('mth');
         $call->setCallSubject($this);
         $call->execute($this);
     }
 
-    public function testOneClosureHandler()
+    /**
+     * @expectedException BadMethodCallException
+     * @expectedExceptionMessageRegExp /.+Boy to covariant method.+Girl::share/
+     */
+    public function test()
+    {
+        $girl = new Girl();
+        $boy  = new Boy();
+
+        $call = new CovariantCall('share');
+        $call->setCallSubject($girl);
+        $call->execute($boy);
+    }
+
+    public function testTypeSpecificClosureCall()
     {
         $testCaseHandler = function (TestCase $test) {
             $this->assertSame($this, $test);
@@ -43,7 +57,7 @@ class CovariantCallTest extends TestCase
         );
     }
 
-    public function testOneClosureHandlerWithArgs()
+    public function testTypeSpecificClosureCallWithArgs()
     {
         $testCaseHandler = function (TestCase $test, $a, $b, $c) {
             $this->assertSame($this, $test);
@@ -53,7 +67,6 @@ class CovariantCallTest extends TestCase
         $call = new CovariantCall('mth');
 
         $call->addHandler(
-            // declare one handler for TestCase
             get_class($this),
             $testCaseHandler
         );
@@ -72,37 +85,41 @@ class CovariantCallTest extends TestCase
         );
     }
 
-    public function testLineageHandler()
+    public function testLookupHandlerInSubjectClassLineageReturnsCallable()
     {
         $call = new CovariantCall('share');
 
-        $girl = new Girl;
+        // We're calling Girl::share(Girl), so we expect
+        // this call to resolve to the method: Girl::shareGirl(Girl).
+        $subject = new Girl;
         $this->assertEquals(
-            [$girl, 'shareGirl'],
+            [$subject, 'shareGirl'],
             $call->findHandlerLineage(
-                $girl,
+                $subject,
                 'share',
                 Girl::class
             )
         );
 
-        $boy = new Boy;
+        // We're calling Boy::share(Boy), so we expect
+        // this call to resolve to the method: Boy::shareBoy(Boy).
+        $subject = new Boy;
         $this->assertEquals(
-            [$boy, 'shareBoy'],
+            [$subject, 'shareBoy'],
             $call->findHandlerLineage(
-                $boy,
+                $subject,
                 'share',
                 Boy::class
             )
         );
     }
 
-    public function testLineageHandler2()
+    public function testFailedLineageLookupReturnsFalse()
     {
         $call = new CovariantCall('share');
 
         $girl = new Girl;
-        $this->assertEmpty(
+        $this->assertFalse(
             $call->findHandlerLineage(
                 $girl,
                 'share',
@@ -111,27 +128,62 @@ class CovariantCallTest extends TestCase
         );
     }
 
-    public function testCallingBaseCovariantMethod()
+    public function testCovariantBaseBodyCalledIfNoHandlerFound()
     {
-        $call = new CovariantCall(null);
+        $call = new CovariantCall('share');
 
-        $call->setMethodBody(function (CovariantCallTest $test) {
-            $this->assertInstanceOf(static::class, $test);
-            $this->assertSame($this, $test);
+        $girl = new Girl;
+        $boy = new Boy;
+
+        $call->setMethodBody(function (Skier $skier) {
+            // Make sure the argument's type is respected.
+            $this->assertInstanceOf(Boy::class, $skier);
+            $this->assertInstanceOf(Skier::class, $skier);
+
             return 'called';
         });
 
-        $call->setCallSubject($this);
+        $this->assertEquals(
+            'shareBoy',
+            $call->methodName('share', 'Boy')
+        );
+
+        $call->setCallSubject($girl);
+
         $this->assertEquals(
             'called',
-            $call->execute($this)
+            $call->execute($boy)
         );
+    }
+
+    // TODO test calling a covariant method without arguments
+    // throw. Whilst return type covariance only works when the return
+    // type isn't type hinted, we're really only concerned with the
+    // parameter's type, so it's important it's there.
+    //
+    // e.g. (new CovariantCall())->execute();
+
+    public function testNonExistingMethod()
+    {
+        // TODO test declaration of covariant method on a method that
+        // doesn't exists (as a poka yoke, just in case somebody uses the
+        // object directly.)
+        //
+        // e.g. (new CovariantCall('someMethodThatIsNotDefined'))->execute($type).
+
+        $this->markTestIncomplete();
+
+        $call = new CovariantCall('nonExistentMethod');
+        $call->setCallSubject($this);
+
+        $girl = new Girl();
+        $call->execute($girl);
     }
 }
 
 class Skier {
     function share(Skier $s) {
-        // The covariant method.
+        // Faking the covariant method.
     }
 }
 

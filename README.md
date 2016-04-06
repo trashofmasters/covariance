@@ -6,6 +6,8 @@ Therefore, when a parent class declares a method which type hints to some abstra
 
 The purpose of this library is to work within the boundary of what PHP allows to implement parameter and return type covariance, as well as contravariance.
 
+For example, the following code produces a fatal error "_Declaration of AnyOtherVet::help should be compatible with Vet::help(Animal)._":
+
 > ```php
 > class Animal {}
 >
